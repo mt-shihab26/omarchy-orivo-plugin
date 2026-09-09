@@ -25,9 +25,13 @@ phase_fields() {
 }
 
 format_time() {
-    # $1 = remaining milliseconds
+    # $1 = remaining milliseconds. Reject anything that isn't a plain
+    # integer before it reaches arithmetic below: bash's $(( )) performs
+    # command substitution on its operand, so an unvalidated value here
+    # (e.g. from a crafted socket response) would be a command injection.
     local ms=$1
-    [ "$ms" -lt 0 ] 2>/dev/null && ms=0
+    [[ "$ms" =~ ^-?[0-9]+$ ]] || ms=0
+    [ "$ms" -lt 0 ] && ms=0
     local total_sec=$((ms / 1000))
     printf "%02d:%02d" $((total_sec / 60)) $((total_sec % 60))
 }

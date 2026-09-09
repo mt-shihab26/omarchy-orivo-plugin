@@ -16,6 +16,6 @@
     "description": "Orivo pomodoro session + countdown",
     "category": "Time",
     "allowMultiple": false,
-    "defaultSection": "right"
+    "defaultSection": "center"
   }
 }

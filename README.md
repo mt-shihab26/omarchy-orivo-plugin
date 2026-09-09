@@ -31,8 +31,9 @@ After linking, load it:
 
 ```sh
 omarchy-shell shell rescanPlugins
-omarchy plugin enable omarchy-orivo-plugin --section right --index 0
+omarchy plugin enable omarchy-orivo-plugin --section center --index 0
 ```
 
 Saved edits under this directory hot-reload automatically; if a change
-doesn't apply, force a rescan with `omarchy-shell shell rescanPlugins`.
+doesn't apply, force a rescan with `omarchy-shell shell rescanPlugins`, or
+restart the shell entirely with `omarchy restart shell`.
