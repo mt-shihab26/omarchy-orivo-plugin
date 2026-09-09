@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "omarchy-orivo-plugin",
+  "name": "Omarchy Orivo Plugin",
+  "version": "1.0.0",
+  "author": "Shihab Mahamud",
+  "description": "Shows the current Orivo pomodoro session and countdown",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Omarchy Orivo Plugin",
+    "description": "Orivo pomodoro session + countdown",
+    "category": "Time",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
