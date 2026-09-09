@@ -44,11 +44,12 @@ if [ -S "$sock" ] && command -v nc >/dev/null 2>&1; then
         label=$(echo "$live_json" | jq -r '.label')
         remaining=$(echo "$live_json" | jq -r '.remaining_millis')
         running=$(echo "$live_json" | jq -r '.is_running')
+        todo=$(echo "$live_json" | jq -r '.todo_text // ""')
         IFS='|' read -r code _ <<<"$(phase_fields "$phase")"
         time_str=$(format_time "$remaining")
         jq -n --arg code "$code" --arg label "$label" --arg time "$time_str" \
-            --argjson running "$running" \
-            '{visible: true, code: $code, label: $label, time: $time, running: $running, live: true}'
+            --arg todo "$todo" --argjson running "$running" \
+            '{visible: true, code: $code, label: $label, time: $time, todo: $todo, running: $running, live: true}'
         exit 0
     fi
 fi

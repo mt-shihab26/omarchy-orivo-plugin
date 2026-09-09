@@ -15,15 +15,23 @@ BarWidget {
   property string code: "W"
   property string label: "Work Session"
   property string time: "00:00"
+  property string todo: ""
   property bool dataVisible: false
   property bool running: false
   property bool live: false
 
-  readonly property string scriptPath: Qt.resolvedUrl("scripts/orivo-status.sh").toString().replace("file://", "")
+  // decodeURIComponent matters: the resolved URL percent-encodes spaces and
+  // non-ASCII, so a plugin checked out under e.g. "~/my projects/" would
+  // otherwise yield a path that does not exist and the widget would go dark.
+  readonly property string scriptPath: decodeURIComponent(Qt.resolvedUrl("scripts/orivo-status.sh").toString().replace("file://", ""))
 
-  readonly property string tooltip: !root.live
-    ? root.label + " · orivo closed"
-    : (root.running ? root.label : root.label + " · Paused")
+  readonly property string tooltip: {
+    var text = root.label
+    if (!root.live) text += " · orivo closed"
+    else if (!root.running) text += " · Paused"
+    if (root.todo !== "") text += " — " + root.todo
+    return text
+  }
 
   visible: dataVisible
   implicitWidth: button.implicitWidth
@@ -44,6 +52,7 @@ BarWidget {
           if (data.code) root.code = data.code
           if (data.label) root.label = data.label
           if (data.time) root.time = data.time
+          root.todo = data.todo || ""
           root.running = !!data.running
           root.live = !!data.live
         } catch (e) {
