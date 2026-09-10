@@ -3,12 +3,13 @@ set -uo pipefail
 
 # Prints the current orivo pomodoro phase and countdown as JSON:
 #   {"visible":true,"code":"W","label":"Work Session","time":"24:59","running":true,"live":true}
-# or {"visible":false} when orivo has never run.
+# or {"visible":false} when orivo isn't currently open.
 #
-# Prefers orivo's live IPC socket (~/.local/state/orivo/orivo.sock), which
-# reports the true running/paused state — something never persisted to
-# store.json. Falls back to the last-saved store.json snapshot (frozen,
-# not ticking) when orivo isn't currently open.
+# Reads orivo's live IPC socket (~/.local/state/orivo/orivo.sock), which
+# only exists while orivo is running and reports the true running/paused
+# state — something never persisted to store.json. The widget hides
+# whenever that socket isn't reachable, rather than showing a frozen
+# snapshot from a closed orivo.
 
 # Put the system paths first so the helpers below resolve to the real tools
 # even if something earlier on the inherited PATH shadows them, while still
@@ -16,8 +17,6 @@ set -uo pipefail
 export PATH="/usr/bin:/bin:${PATH:-}"
 
 sock="$HOME/.local/state/orivo/orivo.sock"
-store="$HOME/.local/state/orivo/store.json"
-config="$HOME/.config/orivo/config.toml"
 
 # Everything below builds its output with jq. Without it there is nothing
 # useful to report, so hide the widget rather than emitting broken JSON.
@@ -73,42 +72,4 @@ if [ -S "$sock" ] && command -v nc >/dev/null 2>&1; then
     fi
 fi
 
-# --- Fall back to the last-saved (frozen) store.json snapshot ---
-if [ ! -f "$store" ]; then
-    echo '{"visible":false}'
-    exit 0
-fi
-
-phase=$(jq -r '.timer_cycle_phase // "Work"' "$store")
-todo_id=$(jq -r '.timer_todo_id // "none"' "$store")
-key="$todo_id"
-
-IFS='|' read -r code label <<<"$(phase_fields "$phase")"
-
-work=25
-brk=5
-longbrk=15
-if [ -f "$config" ]; then
-    w=$(grep -m1 -E '^\s*work_duration\s*=' "$config" | grep -oE '[0-9]+' | head -1 || true)
-    b=$(grep -m1 -E '^\s*break_duration\s*=' "$config" | grep -oE '[0-9]+' | head -1 || true)
-    l=$(grep -m1 -E '^\s*long_break_duration\s*=' "$config" | grep -oE '[0-9]+' | head -1 || true)
-    [ -n "${w:-}" ] && work="$w"
-    [ -n "${b:-}" ] && brk="$b"
-    [ -n "${l:-}" ] && longbrk="$l"
-fi
-
-case "$code" in
-    W) duration_min=$work ;;
-    B) duration_min=$brk ;;
-    L) duration_min=$longbrk ;;
-    *) duration_min=$work ;;
-esac
-duration_ms=$((duration_min * 60 * 1000))
-
-remaining_ms=$(jq -r --arg k "$key" '.timer_remaining_millis[$k] // empty' "$store")
-[ -z "$remaining_ms" ] && remaining_ms=$duration_ms
-
-time_str=$(format_time "$remaining_ms")
-
-jq -n --arg code "$code" --arg label "$label" --arg time "$time_str" \
-    '{visible: true, code: $code, label: $label, time: $time, running: false, live: false}'
+echo '{"visible":false}'

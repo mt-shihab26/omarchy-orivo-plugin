@@ -5,9 +5,9 @@ import qs.Commons
 import qs.Ui
 
 // Orivo pomodoro session + countdown for the Omarchy bar.
-// Polls scripts/orivo-status.sh once a second, which prefers orivo's live
-// IPC socket (~/.local/state/orivo/orivo.sock) and falls back to its last
-// saved ~/.local/state/orivo/store.json snapshot when orivo isn't open.
+// Polls scripts/orivo-status.sh once a second, which reads orivo's live
+// IPC socket (~/.local/state/orivo/orivo.sock). The widget stays hidden
+// whenever that socket isn't reachable, i.e. whenever orivo isn't open.
 BarWidget {
   id: root
   moduleName: "omarchy-orivo-plugin"
@@ -18,7 +18,6 @@ BarWidget {
   property string todo: ""
   property bool dataVisible: false
   property bool running: false
-  property bool live: false
 
   // decodeURIComponent matters: the resolved URL percent-encodes spaces and
   // non-ASCII, so a plugin checked out under e.g. "~/my projects/" would
@@ -27,8 +26,7 @@ BarWidget {
 
   readonly property string tooltip: {
     var text = root.label
-    if (!root.live) text += " · orivo closed"
-    else if (!root.running) text += " · Paused"
+    if (!root.running) text += " · Paused"
     if (root.todo !== "") text += " — " + root.todo
     return text
   }
@@ -54,7 +52,6 @@ BarWidget {
           if (data.time) root.time = data.time
           root.todo = data.todo || ""
           root.running = !!data.running
-          root.live = !!data.live
         } catch (e) {
           root.dataVisible = false
         }
