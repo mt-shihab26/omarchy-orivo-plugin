@@ -10,9 +10,21 @@ set -uo pipefail
 # store.json. Falls back to the last-saved store.json snapshot (frozen,
 # not ticking) when orivo isn't currently open.
 
+# Put the system paths first so the helpers below resolve to the real tools
+# even if something earlier on the inherited PATH shadows them, while still
+# falling back to the caller's PATH on distros that put them elsewhere.
+export PATH="/usr/bin:/bin:${PATH:-}"
+
 sock="$HOME/.local/state/orivo/orivo.sock"
 store="$HOME/.local/state/orivo/store.json"
 config="$HOME/.config/orivo/config.toml"
+
+# Everything below builds its output with jq. Without it there is nothing
+# useful to report, so hide the widget rather than emitting broken JSON.
+if ! command -v jq >/dev/null 2>&1; then
+    echo '{"visible":false}'
+    exit 0
+fi
 
 phase_fields() {
     # $1 = phase string (work/break/long_break or Work/Break/LongBreak)
@@ -44,7 +56,14 @@ if [ -S "$sock" ] && command -v nc >/dev/null 2>&1; then
         label=$(echo "$live_json" | jq -r '.label')
         remaining=$(echo "$live_json" | jq -r '.remaining_millis')
         running=$(echo "$live_json" | jq -r '.is_running')
-        todo=$(echo "$live_json" | jq -r '.todo_text // ""')
+        # Todo text is free-form: collapse newlines and cap the length so one
+        # long todo can't turn the tooltip into a wall of text. Sliced in jq
+        # rather than cut(1) because jq counts codepoints, so this can't split
+        # a multi-byte character and produce invalid UTF-8.
+        todo=$(echo "$live_json" | jq -r '
+            (.todo_text // "")
+            | gsub("[\\n\\r\\t]"; " ")
+            | if length > 80 then .[0:79] + "…" else . end')
         IFS='|' read -r code _ <<<"$(phase_fields "$phase")"
         time_str=$(format_time "$remaining")
         jq -n --arg code "$code" --arg label "$label" --arg time "$time_str" \
