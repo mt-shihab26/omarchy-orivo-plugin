@@ -1,5 +1,7 @@
 # omarchy-orivo-plugin
 
+![Preview](preview.png)
+
 An [Omarchy](https://omarchy.org) bar widget that shows the current
 [orivo](https://github.com/mt-shihab26/orivo) pomodoro session and
 countdown, e.g. `W 24:59` (`W` Work, `B` Break, `L` Long Break — hover for
